@@ -1,0 +1,213 @@
+Let’s break down the code step by step, explaining each part in detail:
+
+---
+
+1. **Importing Libraries**:
+   ```python
+   import numpy as np
+   import pandas as pd
+   import random
+   import matplotlib.pyplot as plt
+   from sklearn.metrics import accuracy_score
+   import tensorflow as tf
+   from tensorflow import keras
+   import matplotlib.pyplot as plt
+   import random
+   ```
+   - `numpy`: A library used for numerical operations, especially arrays and matrices.
+   - `pandas`: A library for handling data in tabular form (though not used in this script).
+   - `random`: Used for generating random numbers (like selecting random images).
+   - `matplotlib.pyplot`: Used to plot graphs and images.
+   - `accuracy_score`: A function from `sklearn` to calculate accuracy.
+   - `tensorflow` and `keras`: Libraries used for creating and training deep learning models.
+   - `random`: Duplicate import here.
+
+---
+
+2. **Importing Keras components for CNN**:
+   ```python
+   from tensorflow.keras.models import Sequential
+   from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense
+   from tensorflow.keras.optimizers import SGD
+   from tensorflow.keras.utils import to_categorical
+   from tensorflow.keras.datasets import mnist
+   ```
+   - `Sequential`: A simple model type where layers are stacked on top of each other.
+   - `Conv2D`: A 2D convolutional layer, used for image processing.
+   - `MaxPooling2D`: A layer that reduces the size of the image, keeping only the most important features.
+   - `Flatten`: Converts the 2D data into 1D for fully connected layers.
+   - `Dense`: Fully connected layers.
+   - `SGD`: Stochastic Gradient Descent, a type of optimizer.
+   - `to_categorical`: Converts labels into one-hot encoding (not used here).
+   - `mnist`: Imports the MNIST dataset.
+
+---
+
+3. **Loading the MNIST dataset**:
+   ```python
+   (x_train, y_train), (x_test, y_test) = mnist.load_data()
+   ```
+   - Loads the MNIST dataset, consisting of handwritten digits (0-9).
+   - `x_train` and `x_test` contain the images of the digits.
+   - `y_train` and `y_test` contain the corresponding labels (the actual digits).
+
+---
+
+4. **Normalizing Image Data**:
+   ```python
+   x_train = x_train / 255
+   x_test = x_test / 255
+   ```
+   - Divides the pixel values by 255 to normalize the images so the pixel values are between 0 and 1. This helps speed up the learning process.
+
+---
+
+5. **Function to plot images**:
+   ```python
+   def plot_digit(image, digit, plt, i):
+       plt.subplot(4, 5, i + 1)
+       plt.imshow(image, cmap='gray')
+       plt.xticks([])
+       plt.yticks([])
+   ```
+   - `plot_digit` is a function to display a single image from the dataset.
+   - `image`: The image to be displayed.
+   - `digit`: The label for the image (not used in the function body but can be useful for future improvements).
+   - `plt.subplot(4, 5, i + 1)`: Creates a grid of 4 rows and 5 columns for displaying 20 images.
+   - `plt.imshow(image, cmap='gray')`: Displays the image in grayscale.
+   - `plt.xticks([])` and `plt.yticks([])`: Hides the x and y axis ticks.
+
+---
+
+6. **Displaying 20 random images from the training dataset**:
+   ```python
+   plt.figure(figsize=(16, 10))
+   for i in range(20):
+       plot_digit(x_train[i], y_train[i], plt, i)
+   plt.show()
+   ```
+   - Displays the first 20 images from the training dataset (`x_train`) along with their labels (`y_train`).
+   - The `plot_digit` function is called for each image.
+
+---
+
+7. **Reshaping the image data**:
+   ```python
+   x_train = x_train.reshape((x_train.shape + (1,)))
+   x_test = x_test.reshape((x_test.shape + (1,)))
+   ```
+   - The images are reshaped to have an extra dimension, making them suitable for a Convolutional Neural Network (CNN). 
+   - The images were originally of shape `(28, 28)`, and after reshaping, they become `(28, 28, 1)`, where `1` indicates the grayscale channel.
+
+---
+
+8. **Creating the Convolutional Neural Network (CNN)**:
+   ```python
+   model = Sequential([
+       Conv2D(32, (3, 3), activation="relu", input_shape=(28, 28, 1)),
+       MaxPooling2D((2, 2)),
+       Flatten(),
+       Dense(100, activation="relu"),
+       Dense(10, activation="softmax")
+   ])
+   ```
+   - `Conv2D(32, (3, 3), activation="relu")`: A convolutional layer with 32 filters of size 3x3, using ReLU activation.
+   - `MaxPooling2D((2, 2))`: A max-pooling layer that reduces the image size by half.
+   - `Flatten()`: Flattens the 2D data into a 1D array for the fully connected layer.
+   - `Dense(100, activation="relu")`: A fully connected layer with 100 neurons and ReLU activation.
+   - `Dense(10, activation="softmax")`: The output layer with 10 neurons (one for each digit), using softmax to output probabilities.
+
+---
+
+9. **Compiling the model**:
+   ```python
+   optimizer = SGD(learning_rate=0.01, momentum=0.9)
+   model.compile(optimizer=optimizer, loss="sparse_categorical_crossentropy", metrics=['accuracy'])
+   ```
+   - `SGD(learning_rate=0.01, momentum=0.9)`: Stochastic Gradient Descent optimizer with a learning rate of 0.01 and momentum of 0.9.
+   - `loss="sparse_categorical_crossentropy"`: The loss function used for multi-class classification (with integer labels).
+   - `metrics=['accuracy']`: The metric we want to track during training (accuracy).
+
+---
+
+10. **Summary of the model**:
+    ```python
+    model.summary()
+    ```
+    - Prints the summary of the model, showing the layers, output shapes, and the number of parameters in the model.
+
+---
+
+11. **Training the model**:
+    ```python
+    model.fit(x_train, y_train, epochs=10, batch_size=32)
+    ```
+    - Trains the model using the training data (`x_train` and `y_train`) for 10 epochs with a batch size of 32.
+
+---
+
+12. **Displaying random test images with predictions**:
+    ```python
+    plt.figure(figsize=(16, 10))
+    for i in range(20):
+        image = random.choice(x_test).squeeze()
+        digit = np.argmax(model.predict(image.reshape((1, 28, 28, 1)))[0], axis=-1)
+        plot_digit(image, digit, plt, i)
+    plt.show()
+    ```
+    - Selects 20 random test images and predicts the digit for each image using the trained model.
+    - `image.reshape((1, 28, 28, 1))`: Reshapes the image to match the input format expected by the model.
+    - `np.argmax(...)`: Converts the predicted probabilities to the digit with the highest probability.
+    - Displays the images along with the predicted labels.
+
+---
+
+13. **Making predictions for the entire test set**:
+    ```python
+    predictions = np.argmax(model.predict(x_test), axis=-1)
+    ```
+    - Predicts the digit for all images in the test set (`x_test`) and selects the class with the highest probability.
+
+---
+
+14. **Calculating accuracy of the model**:
+    ```python
+    accuracy_score(y_test, predictions)
+    ```
+    - Calculates the accuracy of the model by comparing the predicted labels (`predictions`) with the actual labels (`y_test`).
+
+---
+
+15. **Displaying a random test image and predicting the digit**:
+    ```python
+    n = random.randint(0, 9999)
+    plt.imshow(x_test[n])
+    plt.show()
+    ```
+    - Selects a random index `n` and displays the corresponding test image.
+
+16. **Predicting the handwritten digit**:
+    ```python
+    predicted_value = model.predict(x_test)
+    print("Handwritten number in the image is:", np.argmax(predicted_value[n]))
+    ```
+    - Predicts the digit for the selected image and prints the predicted label.
+
+---
+
+17. **Evaluating the model on the test set**:
+    ```python
+    score = model.evaluate(x_test, y_test)
+    print("Loss: ", score[0])
+    print("Accuracy", score[1])
+    ```
+    - Evaluates the model on the test data (`x_test` and `y_test`).
+    - `score[0]`: The loss value.
+    - `score[1]`: The accuracy value.
+
+---
+
+### Key Takeaways:
+- This code trains a Convolutional Neural Network (CNN) on the MNIST dataset and evaluates its performance.
+- The CNN consists of a convolutional layer, max-pooling layer, and dense layers for classification.
+- It visualizes predictions, computes accuracy, and evaluates the model.

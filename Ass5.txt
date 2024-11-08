@@ -1,0 +1,215 @@
+Let's break down and explain each part of the code step by step:
+
+### **1. Importing Required Libraries**
+```python
+import matplotlib.pyplot as plt
+import seaborn as sns
+import matplotlib as mpl
+import matplotlib.pylab as pylab
+import numpy as np
+import re
+```
+- **matplotlib** and **seaborn**: Libraries for creating visualizations like graphs and plots.
+- **numpy**: Used for numerical operations, especially with arrays.
+- **re**: Regular expression module for text processing.
+
+### **2. Cleaning and Preprocessing the Text**
+```python
+sentences = """We are about to study the idea of computational proces. Computational processes are abstract beings that inhabit computers. As they evolve. processes manipulate other abstract things called data. The evolution of a process is directed by a pattern of rules called a program. People create programs to direct processes. In effect, we conjure the spirits of the computer with out spells."""
+```
+- **sentences** is a multi-line string that contains the text to be processed.
+
+```python
+sentences = re.sub('[^A-Za-z0-9]+',' ', sentences)
+print(sentences)
+```
+- **re.sub('[^A-Za-z0-9]+',' ', sentences)**: This regular expression replaces all non-alphanumeric characters (such as punctuation and special characters) with a space.
+
+```python
+sentences = re.sub(r'(?:^| )\w(?:$| )', ' ',sentences).strip()
+print(sentences)
+```
+- **re.sub(r'(?:^| )\w(?:$| )', ' ',sentences)**: This removes all single-letter words (like "a" or "I") by replacing them with spaces.
+
+```python
+sentences = sentences.lower()
+```
+- Converts all the text to lowercase to maintain uniformity in the word representations.
+
+### **3. Tokenizing the Text**
+```python
+words = sentences.split()
+print(words)
+```
+- **split()**: Splits the text into a list of words.
+
+### **4. Creating Vocabulary**
+```python
+vocab = set(words)
+print(vocab)
+```
+- **set(words)**: Converts the list of words into a set to eliminate duplicates, creating the vocabulary.
+
+```python
+vocab_size = len(vocab)
+embed_dim = 10
+context_size = 2
+```
+- **vocab_size**: The size of the vocabulary (number of unique words).
+- **embed_dim**: The dimension of the embedding space. This means each word will be represented by a 10-dimensional vector.
+- **context_size**: The size of the context window (2 words before and 2 words after the target word).
+
+### **5. Mapping Words to Indices**
+```python
+word_to_ix = {word: i for  i, word in enumerate(vocab)}
+print(word_to_ix)
+
+ix_to_word = {i: word for i, word in enumerate(vocab)}
+print(ix_to_word)
+```
+- **word_to_ix**: A dictionary mapping each word to a unique index.
+- **ix_to_word**: A dictionary mapping each index back to its corresponding word.
+
+### **6. Creating the Training Data**
+```python
+data = []
+for i in range(2, len(words)- 2):
+    context = [words[i - 2],words[i - 1],words[i + 1],words[i + 2]]
+    target = words[i]
+    data.append((context, target))
+print(data[:5])
+print("length: ",len(data))
+```
+- **data**: A list of tuples containing the context (2 words before and 2 words after) and the target word.
+- This is done for each word, except for the first two and last two words, as they don't have enough context.
+- `data` is the training dataset, where each element is a pair of context words and the target word.
+
+### **7. Initializing Word Embeddings**
+```python
+embeddings = np.random.random_sample((vocab_size, embed_dim))
+```
+- **embeddings**: A randomly initialized matrix of size `(vocab_size, embed_dim)`. Each row corresponds to a word in the vocabulary and is represented by a random vector of length `embed_dim`.
+
+### **8. Defining Helper Functions**
+```python
+def linear(m, theta):
+    w = theta
+    return m.dot(w)
+```
+- **linear()**: A function that computes the linear transformation of the context words using the weight matrix `theta`.
+
+```python
+def log_softmax(x):
+    e_x = np.exp(x - np.max(x))
+    return np.log(e_x / e_x.sum())
+```
+- **log_softmax()**: A function that applies the log-softmax operation to the input, which is used for multi-class classification.
+
+```python
+def NLLLoss(logs, targets):
+    out = logs[range(len(targets)), targets]
+    return -out.sum() / len(out)
+```
+- **NLLLoss()**: Computes the negative log-likelihood loss for a multi-class classification task. It measures how well the predicted probabilities match the target labels.
+
+```python
+def log_softmax_crossentropy_with_logits(logits, target):
+    out = np.zeros_like(logits)
+    out[np.arange(len(logits)), target] = 1
+    softmax = np.exp(logits) / np.exp(logits).sum(axis=-1, keepdims=True)
+    return (-out + softmax) / logits.shape[0]
+```
+- **log_softmax_crossentropy_with_logits()**: Computes the log-softmax cross-entropy loss. It combines the log-softmax and cross-entropy loss functions into one.
+
+### **9. Forward Pass**
+```python
+def forward(context_idxs, theta):
+    m = embeddings[context_idxs].reshape(1, -1)
+    n = linear(m, theta)
+    o = log_softmax(n)
+    return m, n, o
+```
+- **forward()**: Given a list of context word indices, it performs a forward pass:
+  - Retrieves the word embeddings for the context words.
+  - Applies the linear transformation using `theta`.
+  - Applies the log-softmax operation to get the output probabilities.
+
+### **10. Backward Pass (Gradient Calculation)**
+```python
+def backward(preds, theta, target_idxs):
+    m, n, o = preds
+    dlog = log_softmax_crossentropy_with_logits(n, target_idxs)
+    dw = m.T.dot(dlog)
+    return dw
+```
+- **backward()**: Given the predictions and the target, it computes the gradient of the loss with respect to the parameters `theta` and returns it.
+
+### **11. Parameter Update (Optimization)**
+```python
+def optimize(theta, grad, lr=0.03):
+    theta -= grad * lr
+    return theta
+```
+- **optimize()**: Updates the parameters `theta` using the gradient `grad` and learning rate `lr`.
+
+### **12. Training Loop**
+```python
+theta = np.random.uniform(-1, 1, (2 * context_size * embed_dim, vocab_size))
+epoch_losses = {}
+for epoch in range(80):
+    losses = []
+    for context, target in data:
+        context_idxs = np.array([word_to_ix[w] for w in context])
+        preds = forward(context_idxs, theta)
+        target_idxs = np.array([word_to_ix[target]])
+        loss = NLLLoss(preds[-1], target_idxs)
+        losses.append(loss)
+        grad = backward(preds, theta, target_idxs)
+        theta = optimize(theta, grad, lr=0.03)
+    epoch_losses[epoch] = losses
+```
+- **Training Loop**: Runs for 80 epochs:
+  - For each context-target pair in the data, it performs a forward pass, computes the loss, performs the backward pass to calculate gradients, and updates the parameters using the `optimize()` function.
+
+### **13. Plotting the Loss**
+```python
+ix = np.arange(0, 80)
+fig = plt.figure()
+fig.suptitle('Epoch/Losses', fontsize=20)
+plt.plot(ix, [epoch_losses[i][0] for i in ix])
+plt.xlabel('Epochs', fontsize=12)
+plt.ylabel('Losses', fontsize=12)
+```
+- **Plotting**: Plots the loss values over epochs to visualize how the loss decreases over time.
+
+### **14. Prediction Function**
+```python
+def predict(words):
+    context_idxs = np.array([word_to_ix[w] for w in words])
+    preds = forward(context_idxs, theta)
+    word = ix_to_word[np.argmax(preds[-1])]
+    return word
+```
+- **predict()**: Given a list of context words, predicts the target word by finding the index with the highest probability.
+
+### **15. Accuracy Calculation**
+```python
+def accuracy():
+    wrong = 0
+    for context, target in data:
+        if(predict(context) != target):
+            wrong += 1
+    return(1 - (wrong / len(data)))
+```
+- **accuracy()**: Computes the accuracy of the model by comparing the predicted word with the actual target word for each context.
+
+### **16. Final Accuracy and Prediction**
+```python
+accuracy()
+predict(['processes', 'manipulate', 'things', 'study'])
+```
+- **accuracy()**: Prints the accuracy of the model.
+- **predict()**: Predicts the target word for a given list of context words.
+
+### **Summary:**
+This code implements a **Word2Vec-like model** for predicting a word based on its context using an **autoencoder** architecture. The model learns embeddings for each word by minimizing

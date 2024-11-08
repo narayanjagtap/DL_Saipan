@@ -1,0 +1,123 @@
+Let's break down the code step by step to understand what is happening.
+
+### **1. Loading the Data and Preprocessing:**
+```python
+dataset = pd.read_csv("creditcard.csv")
+dataset = dataset.drop("Time", axis=1)
+dataset.Class.unique()
+features = dataset.drop("Class", axis=1)
+```
+- **Loading Data**: The dataset `creditcard.csv` is loaded using `pandas`.
+- **Removing the 'Time' column**: The "Time" column is dropped as it may not contribute meaningfully to the classification task.
+- **Splitting the features and labels**: `features` stores all columns except for "Class", and the "Class" column (fraud vs normal) is separated as the target label.
+
+### **2. Splitting Data into Train and Test:**
+```python
+x_train, x_test, y_train, y_test = train_test_split(features, dataset['Class'], random_state=2021)
+```
+- The data is split into training and test sets using `train_test_split` from `sklearn`, with 30% of the data going to the test set (`TEST_PCT = 0.3`).
+
+### **3. Selecting Fraudulent Transactions:**
+```python
+train_data = x_train.loc[y_train[y_train == 1].index]
+```
+- The training data (`x_train`) is filtered to include only the fraudulent transactions (where `y_train == 1`).
+
+### **4. Scaling the Data:**
+```python
+minmax = MinMaxScaler(feature_range=(0, 1))
+x_train_scaled = minmax.fit_transform(train_data)
+x_test_scaled = minmax.transform(x_test)
+```
+- The features are scaled to a range between 0 and 1 using `MinMaxScaler`. This is important for neural networks, as it ensures all inputs are in a similar scale.
+
+### **5. Defining the Autoencoder Model:**
+```python
+class AutoEncoder(Model):
+    def __init__(self, output_unit, ldim=8):
+        super().__init__()
+        self.encoder = Sequential([
+            Dense(16, activation="relu"),
+            Dropout(0.1),
+            Dense(ldim, activation="relu")
+        ])
+        self.decoder = Sequential([
+            Dense(16, activation="relu"),
+            Dropout(0.1),
+            Dense(output_unit, activation="sigmoid")
+        ])
+    def call(self, inputs):
+        encoded = self.encoder(inputs)
+        decoded = self.decoder(encoded)
+        return decoded
+```
+- The **AutoEncoder** model is a neural network used to detect anomalies (fraudulent transactions in this case).
+  - The **encoder** compresses the input into a lower-dimensional representation (`ldim`), which is 8 by default.
+  - The **decoder** reconstructs the input from the lower-dimensional representation.
+  - **Dropout layers** are added to prevent overfitting.
+
+### **6. Compiling and Training the Model:**
+```python
+model = AutoEncoder(output_unit=x_train_scaled.shape[1])
+model.compile(optimizer='adam', loss="msle", metrics=['mse'])
+h = model.fit(x_train_scaled, x_train_scaled, validation_data=(x_test_scaled, x_test_scaled), epochs=20, batch_size=512)
+```
+- The **AutoEncoder** model is compiled with the **Adam optimizer** and **MSLE (Mean Squared Logarithmic Error)** as the loss function. The model is trained to reconstruct the input (autoencoding).
+- The model is trained for 20 epochs with a batch size of 512, using both training and validation data (for early stopping or checking performance during training).
+
+### **7. Plotting the Training Losses:**
+```python
+plt.plot(h.history['loss'])
+plt.plot(h.history['mse'])
+plt.plot(h.history['val_loss'])
+plt.plot(h.history['val_mse'])
+plt.legend([ 'loss', 'val_loss'])
+plt.xlabel('Epochs')
+plt.ylabel('MSLE Loss')
+plt.show()
+```
+- This code plots the training and validation loss (`loss` and `val_loss`) and mean squared error (`mse` and `val_mse`) over the epochs.
+
+### **8. Finding the Threshold for Anomalies:**
+```python
+def find_threshold(model, x_train_scaled):
+    recons = model.predict(x_train_scaled)
+    recons_error = tf.keras.metrics.msle(recons, x_train_scaled)
+    threshold = np.mean(recons_error.numpy()) + np.std(recons_error.numpy())
+    return threshold
+```
+- This function calculates the reconstruction error on the training data. 
+  - **MSLE** (Mean Squared Logarithmic Error) is used to measure the difference between the original and reconstructed data.
+  - The threshold is determined as the **mean** of the reconstruction error plus the **standard deviation**, which will help in classifying data as normal or fraudulent.
+
+### **9. Getting Predictions (Anomaly Detection):**
+```python
+def get_pred(model, x_test_scaled, threshold):
+    pred = model.predict(x_test_scaled)
+    error = tf.keras.metrics.msle(pred, x_test_scaled)
+    AnomalyMask = pd.Series(error) > threshold
+    return AnomalyMask.map(lambda x: 0.0 if x == True else 1.0)
+```
+- The model predicts the reconstruction error on the test set. 
+- If the error is above the threshold, it's considered an **anomaly** (fraudulent transaction).
+- The function returns `0` for fraudulent (anomaly) and `1` for normal transactions.
+
+### **10. Applying Threshold and Predicting:**
+```python
+threshold = find_threshold(model, x_train_scaled)
+pred = get_pred(model, x_test_scaled, threshold)
+accuracy_score(pred, y_test)
+```
+- The threshold for anomalies is found using the training data.
+- The predictions for the test set are obtained using the threshold, and the **accuracy score** is calculated by comparing these predictions with the true labels (`y_test`).
+
+### **11. Final Evaluation:**
+```python
+accuracy_score(pred, y_test)
+```
+- The accuracy of the model on the test set is computed using **accuracy_score** from `sklearn`, which compares the predicted values (`pred`) against the true labels (`y_test`).
+
+### **Summary of the Approach:**
+- **Autoencoder** is used for anomaly detection. The model is trained to reconstruct normal transactions.
+- The reconstruction error is used to identify anomalies, which in this case are fraudulent transactions.
+- A **threshold** is calculated from the training data, and predictions are made on the test data by comparing reconstruction errors to this threshold.

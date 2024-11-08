@@ -1,0 +1,135 @@
+Here’s a breakdown and explanation of each line of code:
+
+1. **Installing TensorFlow**:
+   ```python
+   !pip install tensorflow
+   ```
+   - This installs the TensorFlow library, which is an open-source library used for machine learning tasks, including training neural networks.
+
+2. **Importing necessary libraries**:
+   ```python
+   import tensorflow as tf
+   from tensorflow import keras
+   import matplotlib.pyplot as plt
+   import random
+   ```
+   - `tensorflow` and `keras` are for creating and training neural networks.
+   - `matplotlib.pyplot` is used for plotting graphs.
+   - `random` is used to generate random numbers for tasks like selecting a random test image.
+
+3. **Loading the MNIST dataset**:
+   ```python
+   mnist = tf.keras.datasets.mnist
+   (x_train, y_train), (x_test, y_test) = mnist.load_data()
+   ```
+   - The MNIST dataset is a collection of handwritten digits (0-9). 
+   - `x_train` and `x_test` contain the images of handwritten digits, and `y_train` and `y_test` contain the corresponding labels (the actual digits).
+
+4. **Displaying an image from the training dataset**:
+   ```python
+   plt.matshow(x_train[1])
+   ```
+   - This displays the second image from the `x_train` dataset.
+
+5. **Displaying a negative of an image from the training dataset**:
+   ```python
+   plt.imshow(-x_train[0], cmap="gray")
+   ```
+   - This displays the first image from the training dataset but inverted (negative values).
+
+6. **Normalizing the data**:
+   ```python
+   x_train = x_train / 255
+   y_train = y_train / 255
+   ```
+   - This normalizes the images by dividing each pixel value by 255 (the maximum pixel value). This makes the pixel values between 0 and 1, improving the training process.
+   - However, `y_train` should not be divided by 255 because the labels (0-9) are integers, not pixel values.
+
+7. **Building the neural network model**:
+   ```python
+   model = keras.Sequential([keras.layers.Flatten(input_shape=(28, 28)),
+                             keras.layers.Dense(128, activation="relu"),
+                             keras.layers.Dense(10, activation="softmax")])
+   ```
+   - A Sequential model is used to build the neural network.
+   - `Flatten(input_shape=(28, 28))`: Flattens each 28x28 image into a 1D array of 784 pixels.
+   - `Dense(128, activation="relu")`: A fully connected layer with 128 neurons and ReLU (Rectified Linear Unit) activation function.
+   - `Dense(10, activation="softmax")`: The output layer with 10 neurons (one for each digit), using the softmax activation to output probabilities.
+
+8. **Model summary**:
+   ```python
+   model.summary()
+   ```
+   - This prints a summary of the model, including the layers and the number of parameters.
+
+9. **Compiling the model**:
+   ```python
+   model.compile(optimizer="sgd", loss="sparse_categorical_crossentropy", metrics=['accuracy'])
+   ```
+   - `sgd` stands for Stochastic Gradient Descent, which is the optimizer used to minimize the loss.
+   - `sparse_categorical_crossentropy` is the loss function for multi-class classification tasks.
+   - `metrics=['accuracy']` indicates that the model should track accuracy during training.
+
+10. **Training the model**:
+   ```python
+   history = model.fit(x_train, y_train, validation_data=(x_test, y_test), epochs=10)
+   ```
+   - The model is trained on `x_train` and `y_train` for 10 epochs, with `x_test` and `y_test` used for validation.
+
+11. **Evaluating the model on the test set**:
+   ```python
+   test_loss, test_acc = model.evaluate(x_test, y_test)
+   print("Loss:", test_loss)
+   print("Accuracy:", test_acc)
+   ```
+   - The model is evaluated on the test data, and the loss and accuracy are printed.
+
+12. **Selecting a random test image**:
+   ```python
+   n = random.randint(0, 9999)
+   plt.imshow(x_test[n])
+   plt.show()
+   ```
+   - A random index `n` between 0 and 9999 is selected, and the corresponding test image is displayed.
+
+13. **Making predictions**:
+   ```python
+   predicted_value = model.predict(x_test)
+   ```
+   - The model makes predictions on the entire `x_test` dataset.
+
+14. **Displaying the random test image and its prediction**:
+   ```python
+   plt.imshow(x_test[n])
+   plt.show()
+   print(predicted_value[n])
+   ```
+   - The randomly selected test image is displayed again.
+   - The predicted values (probabilities) for the image are printed.
+
+15. **Plotting the training accuracy**:
+   ```python
+   plt.plot(history.history['accuracy'])
+   plt.plot(history.history['val_accuracy'])
+   plt.title('model_accuracy')
+   plt.ylabel('accuracy')
+   plt.xlabel('epoch')
+   plt.show()
+   ```
+   - This plots the accuracy of the model over the training epochs, showing both the training and validation accuracy.
+
+16. **Plotting the training loss**:
+   ```python
+   plt.plot(history.history['loss'])
+   plt.plot(history.history['val_loss'])
+   plt.title('model_loss')
+   plt.ylabel('loss')
+   plt.xlabel('epoch')
+   plt.legend(['Train', 'Validation'], loc='upper left')
+   plt.show()
+   ```
+   - This plots the loss over the training epochs, showing both the training and validation loss.
+
+### Notes:
+- You should avoid normalizing `y_train` since it contains integer labels.
+- You can modify the plot legends to be more descriptive if necessary.

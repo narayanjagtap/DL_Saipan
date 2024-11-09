@@ -213,3 +213,24 @@ predict(['processes', 'manipulate', 'things', 'study'])
 
 ### **Summary:**
 This code implements a **Word2Vec-like model** for predicting a word based on its context using an **autoencoder** architecture. The model learns embeddings for each word by minimizing
+
+
+
+
+
+In this code, there is no external dataset being used. Instead, the dataset is created directly from a given text string.
+
+Explanation:
+sentences: This is a string containing a block of text defined within the code:
+python
+Copy code
+sentences = """We are about to study the idea of computational proces. Computational processes are abstract beings that inhabit computers. As they evolve. processes manipulate other abstract things called data. The evolution of a process is directed by a pattern of rules called a program. People create programs to direct processes. In effect, we conjure the spirits of the computer with out spells."""
+This string is pre-processed using re.sub() to remove non-alphanumeric characters and single-letter words, then converted to lowercase and split into words.
+Dataset Construction:
+words: A list of words extracted from the pre-processed sentences.
+vocab: A set of unique words from the words list.
+Training data (data): The code constructs training examples by using a sliding window approach:
+The context includes the two words before and after a target word.
+The target is the word being predicted.
+Summary:
+The dataset for training is generated from the provided sentences string in the code. It processes the text to create context-target pairs for training a simple neural network. This approach simulates building a dataset for a Word2Vec model, specifically a continuous bag of words (CBOW) model.

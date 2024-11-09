@@ -211,3 +211,8 @@ Let’s break down the code step by step, explaining each part in detail:
 - This code trains a Convolutional Neural Network (CNN) on the MNIST dataset and evaluates its performance.
 - The CNN consists of a convolutional layer, max-pooling layer, and dense layers for classification.
 - It visualizes predictions, computes accuracy, and evaluates the model.
+
+
+
+
+The code you provided does not use CSV files. Instead, it uses the MNIST dataset directly loaded from TensorFlow’s tf.keras.datasets, which provides the dataset in the form of pre-processed arrays.

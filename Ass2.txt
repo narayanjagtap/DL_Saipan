@@ -133,3 +133,10 @@ Here’s a breakdown and explanation of each line of code:
 ### Notes:
 - You should avoid normalizing `y_train` since it contains integer labels.
 - You can modify the plot legends to be more descriptive if necessary.
+
+
+
+
+
+
+The code snippet you shared is for loading the MNIST dataset using TensorFlow's tf.keras.datasets module, which is built-in and does not require a CSV file. This dataset includes pre-loaded training and test images, making it easy to use for image recognition tasks.

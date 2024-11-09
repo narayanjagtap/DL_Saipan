@@ -139,4 +139,7 @@ Here’s a breakdown and explanation of each line of code:
 
 
 
-The code snippet you shared is for loading the MNIST dataset using TensorFlow's tf.keras.datasets module, which is built-in and does not require a CSV file. This dataset includes pre-loaded training and test images, making it easy to use for image recognition tasks.
+The code snippet you shared is for loading the MNIST dataset using TensorFlow's tf.keras.datasets module, which is built-in and does not require a CSV file. 
+This dataset includes pre-loaded training and test images, making it easy to use for image recognition tasks.
+It means that TensorFlow provides the MNIST dataset as part of its built-in libraries, so you don’t need to download or read it from an external CSV file. 
+The code you wrote uses tf.keras.datasets to directly load the MNIST dataset into training and testing sets.
